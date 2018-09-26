@@ -15,12 +15,7 @@
   }
 
   .ball {
-    width: 15px;
-    height: 15px;
-    background: blue;
     position: absolute;
-    left: 0;
-    bottom: 0;
     border-radius: 50%;
   }
 </style>
@@ -31,6 +26,33 @@
   let body = document.querySelector('body')
   const cw = document.body.clientWidth//屏幕宽度
   const ch = document.body.clientHeight//屏幕高度
+
+  init()
+
+  function init() {
+    const ballNumber = 50
+    let frag = document.createDocumentFragment()
+    for (let i = 0; i < ballNumber; i++) {
+      let ball = document.createElement('div')
+      let speed = randomSpeed()
+      let size = randomSize()
+      let color = randomColor()
+      let option = {
+        class: 'ball',
+        style: `left:${(cw - size) / 2}px;bottom:${(ch - size) / 2}px;width:${size}px;height:${size}px;background:${color}`,
+        x: speed.x,
+        y: speed.y,
+        size:size
+      }
+      for (let key in option) {
+        ball.setAttribute(key, option[key])
+      }
+      frag.appendChild(ball)
+    }
+
+    body.appendChild(frag)
+    requestAnimationFrame(move)
+  }
 
   function move() {
     let balls = document.querySelectorAll('.ball')
@@ -64,33 +86,6 @@
       ball.style.left = `${positionX + xSpeed}px`
       ball.style.bottom = `${positionY + ySpeed}px`
     })
-    requestAnimationFrame(move)
-  }
-
-  init()
-
-  function init() {
-    const ballNumber = 50
-    let frag = document.createDocumentFragment()
-    for (let i = 0; i < ballNumber; i++) {
-      let ball = document.createElement('div')
-      let speed = randomSpeed()
-      let size = randomSize()
-      let color = randomColor()
-      let option = {
-        class: 'ball',
-        style: `left:${(cw - size) / 2}px;bottom:${(ch - size) / 2}px;width:${size}px;height:${size}px;background:${color}`,
-        x: speed.x,
-        y: speed.y,
-        size:size
-      }
-      for (let key in option) {
-        ball.setAttribute(key, option[key])
-      }
-      frag.appendChild(ball)
-    }
-
-    body.appendChild(frag)
     requestAnimationFrame(move)
   }
 

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Title</title>
+  <title>messyBalls</title>
 </head>
 <style>
   html, body {
@@ -14,104 +14,156 @@
     overflow: hidden;
   }
 
-  .ball {
-    position: absolute;
-    border-radius: 50%;
+  canvas {
+    height: 100%;
   }
 </style>
 <body>
-
+<canvas id="canvas"></canvas>
 </body>
+
 <script>
-  let body = document.querySelector('body')
   const cw = document.body.clientWidth//屏幕宽度
   const ch = document.body.clientHeight//屏幕高度
+  let balls = setBallsInfo()
 
   init()
 
   function init() {
-    const ballNumber = 50
-    let frag = document.createDocumentFragment()
-    for (let i = 0; i < ballNumber; i++) {
-      let ball = document.createElement('div')
-      let speed = randomSpeed()
-      let size = randomSize()
-      let color = randomColor()
-      let option = {
-        class: 'ball',
-        style: `left:${(cw - size) / 2}px;bottom:${(ch - size) / 2}px;width:${size}px;height:${size}px;background:${color}`,
-        x: speed.x,
-        y: speed.y,
-        size:size
-      }
-      for (let key in option) {
-        ball.setAttribute(key, option[key])
-      }
-      frag.appendChild(ball)
-    }
-
-    body.appendChild(frag)
+    initCanvas()
     requestAnimationFrame(move)
+  }
+
+  function initCanvas() {
+    let canvas = document.querySelector('#canvas')
+    canvas.width = cw
+    canvas.height = ch
+
+    var ctx = canvas.getContext("2d")
+
+    ctx.beginPath()
+    ctx.fillStyle = "#FF00FF"
+    ctx.arc(100, 100, 50, 0, Math.PI * 2, true)
+    ctx.fill()
+
+    ctx.beginPath()
+    ctx.fillStyle = "#FF0000"
+    ctx.arc(200, 200, 50, 0, Math.PI * 2, true)
+    ctx.fill()
   }
 
   function move() {
-    let balls = document.querySelectorAll('.ball')
-    balls.forEach((ball) => {
-      let positionX = parseInt(ball.style.left)
-      let positionY = parseInt(ball.style.bottom)
+    let canvas = document.querySelector('#canvas')
+    let ctx = canvas.getContext("2d")
+    ctx.clearRect(0, 0, cw, ch)
 
-      let xSpeed = Number(ball.getAttribute('x'))
-      let ySpeed = Number(ball.getAttribute('y'))
-
-      let size = Number(ball.getAttribute('size'))
-
-      if (positionX >= cw - size) {
-        xSpeed = -xSpeed
-        ball.setAttribute('x',xSpeed)
-      }
-      if (positionX <= 0) {
-        xSpeed = Math.abs(xSpeed)
-        ball.setAttribute('x',xSpeed)
+    balls.forEach(ball => {
+      let position = {
+        left: ball.x - ball.r,
+        right: ball.x + ball.r,
+        top: ball.y + ball.r,
+        bottom: ball.y - ball.r,
       }
 
-      if (positionY >= ch - size) {
-        ySpeed = -ySpeed
-        ball.setAttribute('y',ySpeed)
+      if (position.right >= cw) {
+        ball.speedX = -ball.speedX
       }
-      if (positionY <= 0) {
-        ySpeed = Math.abs(ySpeed)
-        ball.setAttribute('y',ySpeed)
+      if (position.left <= 0) {
+        ball.speedX = Math.abs(ball.speedX)
       }
 
-      ball.style.left = `${positionX + xSpeed}px`
-      ball.style.bottom = `${positionY + ySpeed}px`
+      if (position.top >= ch) {
+        ball.speedY = -ball.speedY
+      }
+      if (position.bottom <= 0) {
+        ball.speedY = Math.abs(ball.speedY)
+      }
+
+      ball.x += ball.speedX
+      ball.y += ball.speedY
+
+      ctx.beginPath()
+      ctx.fillStyle = ball.color
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2)
+      ctx.fill()
     })
+
     requestAnimationFrame(move)
   }
 
-  function randomSpeed() {
-    let max = 15
-    let min = -15
-    let speed = {
-      x: (Math.random() * (max - min + 1) + min).toFixed(2),
-      y: (Math.random() * (max - min + 1) + min).toFixed(2),
-    }
-    return ((speed.x <=1 && speed.x >= -1) || (speed.y <=1 && speed.y >= -1))?randomSpeed():speed
-  }
-  function randomSize() {
-    let max = 15
-    let min = 100
-    return  (Math.random() * (max - min + 1) + min).toFixed(0)
+  //失败的碰撞检测
+  function checkBalls() {
+    let hasCheck = []
+    balls.forEach((ball, ballIndex) => {
+      let position = {
+        left: ball.x - ball.r,
+        right: ball.x + ball.r,
+        top: ball.y + ball.r,
+        bottom: ball.y - ball.r,
+      }
+
+      let collision = balls.filter((otherBall, otherBallIndex) => {
+        let otherPosition = {
+          left: otherBall.x - otherBall.r,
+          right: otherBall.x + otherBall.r,
+          top: otherBall.y + otherBall.r,
+          bottom: otherBall.y - otherBall.r,
+        }
+
+        if (otherPosition.left >= position.left && otherPosition.left <= position.right && otherPosition.top <= position.top && otherPosition.top >= position.bottom) {
+          return true
+        }
+        return false
+      })
+      if (collision) {
+        collision.forEach((cBall) => {
+          hasCheck.push(cBall.index)
+
+        })
+      }
+
+    })
   }
 
-  function randomColor(){
-    return  '#' +
-      (function(color){
-        return (color +=  '0123456789abcdef'[Math.floor(Math.random()*16)])
-        && (color.length == 6) ?  color : arguments.callee(color);
+  function setBallsInfo() {
+    const max = 30
+    let balls = []
+    for (let i = 0; i < max; i++) {
+      let ball = randomInfo()
+      ball.index = i
+      balls.push(ball)
+    }
+    return balls
+  }
+
+  function randomInfo() {
+    let speedMax = 10
+    let speedMin = -10
+    let rMax = 100
+    let rMin = 20
+
+    let info = {
+      x: Number((Math.random() * cw).toFixed(0)),
+      y: Number((Math.random() * ch).toFixed(0)),
+      r: Number((Math.random() * (rMax - rMin + 1) + rMin).toFixed(0)),
+      speedX: Number((Math.random() * (speedMax - speedMin + 1) + speedMin).toFixed(2)),
+      speedY: Number((Math.random() * (speedMax - speedMin + 1) + speedMin).toFixed(2)),
+      color: randomColor()
+    }
+    if ((info.x + info.r > cw) || (info.x <= info.r) || (info.y + info.r > ch) || (info.y <= info.r) || Math.abs(info.speedX) <= 1 || Math.abs(info.speedY) <= 1) {
+      return randomInfo()
+    }
+    else {
+      return info
+    }
+  }
+
+  function randomColor() {
+    return '#' +
+      (function (color) {
+        return (color += '0123456789abcdef'[Math.floor(Math.random() * 16)])
+        && (color.length == 6) ? color : arguments.callee(color);
       })('');
   }
-
-
 </script>
 </html>
